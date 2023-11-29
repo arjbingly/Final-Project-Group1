@@ -2,7 +2,7 @@
 
 download_link="https://archive.org/download/1mFakeFaces/1m_faces_00.tar"
 
-destination_folder="./downloaded_images"
+destination_folder="./Data/downloaded_images"
 
 mkdir -p "$destination_folder"
 
