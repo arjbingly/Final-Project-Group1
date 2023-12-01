@@ -53,7 +53,7 @@ class CustomDataset(data.Dataset):
         elif self.type_data == 'test':
             y = self.xdf_dset_test.target.get(ID)
             file = xdf_dset_test.destination_path.get(ID)
-        else:
+        elif self.type_data == 'dev':
             y = self.xdf_dset_dev.target.get(ID)
             file = xdf_dset_dev.destination_path.get(ID)
 

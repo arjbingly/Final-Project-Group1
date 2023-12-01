@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import os
 from torchvision.models import DenseNet
@@ -7,7 +8,7 @@ from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchmetrics
 import tqdm
-
+from load_data import CustomDataset, CustomDataLoader
 #%%
 is_cuda = torch.cuda.is_available()
 if is_cuda:
@@ -17,8 +18,21 @@ else:
     device = torch.device("cpu")
     print("GPU not available, CPU used")
 #%%
+OR_PATH = os.getcwd()
+sep = os.path.sep
+os.chdir('..')
+DATA_DIR = os.getcwd() + sep + 'Data' + sep
+os.chdir(OR_PATH)
+EXCEL_FILE = 'fully_processed.xlsx'
+#%%
+#%%
+IMAGE_SIZE = 256
+CHANNEL = 3
+BATCH_SIZE = 32
+#%%
 MODEL_NAME = 'DenseNet'
 SAVE_MODEL = True
+N_EPOCHS = 10
 LR = 0.0001
 MOMENTUM = 0.9
 def model_definition():
@@ -38,29 +52,10 @@ def model_definition():
     return model, optimizer, criterion, scheduler
 
 #%%
-# test torchmetreics
-# metrics accuracy, auroc, precision, recall, f1_score,
-metrics = [torchmetrics.Accuracy(task='binary'),
-           torchmetrics.Precision(task='binary'),
-           torchmetrics.Recall(task='binary'),
-           torchmetrics.AUROC(task='binary'),
-           torchmetrics.F1Score(task='binary')]
 
-for epoch in range(2):
-    preds_list = [[0,1,0],[1,1,1],[0,0,0]]
-    target_list = [[0,1,0],[0,1,0],[0,1,0]]
-    for i in range(3):
-        preds = torch.Tensor(preds_list[i])
-        target = torch.Tensor(target_list[i])
-        metrics_ = [metric(preds,target) for metric in metrics]
-        print(f'{i}: accs={metrics_}')
-
-    metrics_ = [metric.compute() for metric in metrics]
-    _ = [metric.reset() for metric in metrics]
-    print(f'Overall Acc : {metrics_}')
 
 #%%
-N_EPOCHS = 10
+
 def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_stop_patience):
 
     save_on = metric_names.index(save_on)
@@ -209,8 +204,29 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
             print('Early Stopping !! ')
             break
 
+#%%
+if __name__ == '__main__':
+    xdf_data = pd.read_excel(EXCEL_FILE)
+    xdf_dset = xdf_data[xdf_data["split"] == 'train'].copy()
+    xdf_dset_test = xdf_data[xdf_data["split"] == 'test'].copy()
+    xdf_dset_dev = xdf_data[xdf_data["split"] == 'dev'].copy()
 
+    train_gen, test_gen, dev_gen = CustomDataLoader.read_data()
 
+    metric_lst = [torchmetrics.Accuracy(task='binary'),
+                   torchmetrics.Precision(task='binary'),
+                   torchmetrics.Recall(task='binary'),
+                   torchmetrics.AUROC(task='binary'),
+                   torchmetrics.F1Score(task='binary')]
+    metric_names = ['Accuracy',
+                     'Precision',
+                     'Recall',
+                     'AUROC',
+                     'F1Score']
+    save_on = 'AUROC'
+    early_stop_patience = 10
+
+    train_test(train_gen, test_gen, metric_lst, metric_names, save_on, early_stop_patience)
 
 
 
