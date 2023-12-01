@@ -1,0 +1,9 @@
+# How to Download DeepFakeFace Dataset #
+
+make sure git-lfs is installed; to install run:
+	sudo apt-get install git-lfs
+
+then; 
+	git clone https://huggingface.co/datasets/OpenRL/DeepFakeFace
+
+make sure you are in the Data Folder before doing so...
