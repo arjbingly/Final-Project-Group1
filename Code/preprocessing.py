@@ -55,6 +55,13 @@ def create_dataframe(root_dirs):
             data['target_class'].extend(['fake'] * len(faces_00_images))
             data['folder'].extend(['1m_faces_00'] * len(faces_00_images))
 
+        elif root_dir.endswith('iFakeFaceDB'):
+            ifake_images = get_image_paths_in_folder(root_dir)
+            data['image path'].extend(ifake_images)
+            data['split'].extend(['pending'] * len(ifake_images))
+            data['target_class'].extend(['fake'] * len(ifake_images))
+            data['folder'].extend(['iFakeFaceDB'] * len(ifake_images))
+
     df = pd.DataFrame(data)
     return df
 
@@ -62,8 +69,10 @@ def create_dataframe(root_dirs):
 directories = [
     os.path.join('..', 'Data', 'downloaded_images', 'celebahq256_imgs'),
     os.path.join('..', 'Data', 'downloaded_images', 'DeepFakeFace'),
-    os.path.join('..', 'Data', 'downloaded_images', '1m_faces_00')
+    os.path.join('..', 'Data', 'downloaded_images', '1m_faces_00'),
+    os.path.join('..', 'Data', 'downloaded_images', 'iFakeFaceDB')
 ]
+
 
 df = create_dataframe(directories)
 

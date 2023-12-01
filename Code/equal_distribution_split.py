@@ -5,7 +5,7 @@ data = pd.read_excel('image_data.xlsx',index_col=0)
 OUTPUT_EXCEL = 'equal_distribution.xlsx'
 # Filtering fake images based on the given folder distribution
 fake_images = pd.DataFrame(columns=data.columns)
-fake_folders = {'inpainting': 30000, 'insight': 30000, 'text2img': 30000, '1m_faces_00': 10000}
+fake_folders = {'inpainting': 12000, 'insight': 12000, 'text2img': 12000, '1m_faces_00': 10000, 'iFakeFaceDB': 14000}
 fake_count = 0
 
 for folder, count in fake_folders.items():

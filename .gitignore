@@ -161,3 +161,4 @@ cython_debug/
 /downloaded_images
 
 /Data
+.DS_Store
