@@ -67,7 +67,7 @@ def model_definition():
     optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
 
-    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=LR_PATIENCE, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=LR_PATIENCE, verbose=True)
 
     print(model, file=open(f'summary_{MODEL_NAME}.txt', 'w'))
 
