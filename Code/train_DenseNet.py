@@ -9,7 +9,23 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchmetrics
 from tqdm import tqdm
 from load_data import CustomDataset, CustomDataLoader
-#%%
+# %%
+EXCEL_FILE = 'fully_processed.xlsx' # --
+# %%
+IMAGE_SIZE = 256
+CHANNEL = 3
+BATCH_SIZE = 32 # --
+# %%
+MODEL_NAME = 'DenseNet' # --
+SAVE_MODEL = True # --
+N_EPOCHS = 10 # --
+LR = 0.0001 # --
+MOMENTUM = 0.9 # --
+ES_PATIENCE = 5 # --
+LR_PATIENCE = 2 # --
+SAVE_ON = 'AUROC' #--
+
+# %%
 is_cuda = torch.cuda.is_available()
 if is_cuda:
     device = torch.device("cuda")
@@ -17,24 +33,16 @@ if is_cuda:
 else:
     device = torch.device("cpu")
     print("GPU not available, CPU used")
-#%%
+
+# %%
 OR_PATH = os.getcwd()
 sep = os.path.sep
 os.chdir('..')
 DATA_DIR = os.getcwd() + sep + 'Data' + sep
 os.chdir(OR_PATH)
-EXCEL_FILE = 'fully_processed.xlsx'
-#%%
-#%%
-IMAGE_SIZE = 256
-CHANNEL = 3
-BATCH_SIZE = 32
-#%%
-MODEL_NAME = 'DenseNet'
-SAVE_MODEL = True
-N_EPOCHS = 10
-LR = 0.0001
-MOMENTUM = 0.9
+
+
+# %%
 def model_definition():
     model = DenseNet(num_classes=1,
                      growth_rate=48,
@@ -45,19 +53,16 @@ def model_definition():
     optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
 
-    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=LR_PATIENCE, verbose=True)
 
     print(model, file=open(f'summary_{MODEL_NAME}.txt', 'w'))
 
     return model, optimizer, criterion, scheduler
 
-#%%
 
-
-#%%
+# %%
 
 def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_stop_patience):
-
     save_on = metric_names.index(save_on)
 
     model, optimizer, criterion, scheduler = model_definition()
@@ -84,7 +89,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
 
         train_target_hist = list([])
 
-        #--Start Model Training--
+        # --Start Model Training--
         model.train()
 
         with tqdm(total=len(train_gen), desc=f'Epoch {epoch}') as pbar:
@@ -115,12 +120,12 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
 
                 pred_logit = output.detach().cpu()
                 # pred_label = torch.round(pred_logit)
-                pred_label = torch.where(pred_logit > 0.5, 1 ,0)
+                pred_label = torch.where(pred_logit > 0.5, 1, 0)
 
                 metrics_ = [metric(pred_label, xtarget.cpu()) for metric in metrics_lst]
 
                 pbar.update(1)
-                avg_train_loss = train_loss/steps_train
+                avg_train_loss = train_loss / steps_train
                 pbar.set_postfix_str(f'Train Loss: {avg_train_loss:.5f}')
 
             train_loss_hist.append(avg_train_loss)
@@ -138,7 +143,6 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
         test_pred_labels = np.zeros(1)
 
         model.eval()
-
 
         with tqdm(total=len(test_gen), desc=f'Epoch {epoch}') as pbar:
             with torch.no_grad():
@@ -180,11 +184,11 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
             met_test = test_metrics[save_on]
 
         xstrres = f'Epoch {epoch}'
-        for name,value in zip(metric_names, train_metrics):
+        for name, value in zip(metric_names, train_metrics):
             xstrres = f'{xstrres} Train {name} {value:.5f}'
 
         xstrres = xstrres + ' - '
-        for name,value in zip(metric_names, test_metrics):
+        for name, value in zip(metric_names, test_metrics):
             xstrres = f'{xstrres} Test {name} {value:.5f}'
 
         print(xstrres)
@@ -193,10 +197,10 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
         if met_test > met_test_best and SAVE_MODEL:
             torch.save(model.state_dict(), f'model_{MODEL_NAME}.pt')
 
-            xdf_dset_results = xdf_dset_test.copy() #global var
+            xdf_dset_results = xdf_dset_test.copy()  # global var
             xdf_dset_results['results'] = test_pred_labels
 
-            xdf_dset_results.to_excel(f'results_{MODEL_NAME}', index = False)
+            xdf_dset_results.to_excel(f'results_{MODEL_NAME}', index=False)
             print('Model Saved !!')
             met_test_best = met_test
             model_save_epoch.append(epoch)
@@ -206,7 +210,8 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
             print('Early Stopping !! ')
             break
 
-#%%
+
+# %%
 if __name__ == '__main__':
     xdf_data = pd.read_excel(EXCEL_FILE)
     xdf_dset = xdf_data[xdf_data["split"] == 'train'].copy()
@@ -217,19 +222,16 @@ if __name__ == '__main__':
     train_gen, test_gen, dev_gen = data_loader.read_data()
 
     metric_lst = [torchmetrics.Accuracy(task='binary'),
-                   torchmetrics.Precision(task='binary'),
-                   torchmetrics.Recall(task='binary'),
-                   torchmetrics.AUROC(task='binary'),
-                   torchmetrics.F1Score(task='binary')]
+                  torchmetrics.Precision(task='binary'),
+                  torchmetrics.Recall(task='binary'),
+                  torchmetrics.AUROC(task='binary'),
+                  torchmetrics.F1Score(task='binary')]
     metric_names = ['Accuracy',
-                     'Precision',
-                     'Recall',
-                     'AUROC',
-                     'F1Score']
+                    'Precision',
+                    'Recall',
+                    'AUROC',
+                    'F1Score']
+
+    early_stop_patience = ES_PATIENCE
     save_on = 'AUROC'
-    early_stop_patience = 10
-
     train_test(train_gen, test_gen, metric_lst, metric_names, save_on, early_stop_patience)
-
-
-
