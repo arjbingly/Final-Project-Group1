@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pandas as pd
 import torch
@@ -10,19 +11,32 @@ import torchmetrics
 from tqdm import tqdm
 from load_data import CustomDataset, CustomDataLoader
 # %%
-EXCEL_FILE = 'fully_processed.xlsx' # --
+parser = argparse.ArgumentParser()
+parser.add_argument('-c', action='store_true')
+parser.add_argument('-e', '--excel', default='fully_processed.xlsx', type=str)
+parser.add_argument('-n', '--name', default='DenseNet',type=str)
+parser.add_argument('--dry', action='store_false')
+args = parser.parse_args()
+
+#%%
+# EXCEL_FILE = 'fully_processed.xlsx' # --
+EXCEL_FILE = args.excel
+# CONTINUE_TRAINING = False
+CONTINUE_TRAINING = args.c
 # %%
 IMAGE_SIZE = 256
 CHANNEL = 3
-BATCH_SIZE = 32 # --
+BATCH_SIZE = 64 # --
 # %%
-MODEL_NAME = 'DenseNet' # --
-SAVE_MODEL = True # --
+# MODEL_NAME = 'DenseNet' # --
+MODEL_NAME = args.name
+# SAVE_MODEL = True # --
+SAVE_MODEL = args.dry
 N_EPOCHS = 10 # --
-LR = 0.0001 # --
+LR = 0.01 # --
 MOMENTUM = 0.9 # --
 ES_PATIENCE = 5 # --
-LR_PATIENCE = 2 # --
+LR_PATIENCE = 1 # --
 SAVE_ON = 'AUROC' #--
 
 # %%
@@ -53,7 +67,7 @@ def model_definition():
     optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
 
-    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=LR_PATIENCE, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=LR_PATIENCE, verbose=True)
 
     print(model, file=open(f'summary_{MODEL_NAME}.txt', 'w'))
 
@@ -63,6 +77,7 @@ def model_definition():
 # %%
 
 def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_stop_patience):
+
     save_on = metric_names.index(save_on)
 
     model, optimizer, criterion, scheduler = model_definition()
@@ -83,11 +98,69 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
     met_test_best = 0
     model_save_epoch = []
 
+    if CONTINUE_TRAINING:
+        model.load_state_dict(torch.load(f'model_{MODEL_NAME}', map_location=device))
+        model = model.to(device)
+        print(f'Continuing Training - {MODEL_NAME}')
+        model_save_epoch.append(0)
+        model.eval()
+
+        test_loss = 0
+        steps_test = 0
+
+        test_target_hist = list([])
+        test_pred_labels = np.zeros(1)
+
+        with tqdm(total=len(test_gen), desc=f'Saved Model') as pbar:
+            with torch.no_grad():
+                for xdata, xtarget in test_gen:
+                    xdata, xtarget = xdata.to(device), xtarget.to(device)
+
+                    optimizer.zero_grad()
+                    output = model(xdata)
+                    loss = criterion(output, xtarget)
+
+                    steps_test += 1
+                    test_loss += loss.item()
+
+                    output_arr = output.detach().cpu().numpy()
+
+                    if len(test_target_hist) == 0:
+                        test_target_hist = xtarget.cpu().numpy()
+                    else:
+                        test_target_hist = np.vstack([test_target_hist, xtarget.cpu().numpy()])
+
+                    pred_logit = output.detach().cpu()
+                    # pred_label = torch.round(pred_logit)
+                    pred_label = torch.where(pred_logit > 0.5, 1, 0)
+
+                    test_pred_labels = np.vstack([test_pred_labels, pred_label.numpy()])
+
+                    metrics_ = [metric(pred_label, xtarget.cpu()) for metric in metrics_lst]
+
+                    pbar.update(1)
+                    avg_test_loss = test_loss / steps_test
+                    pbar.set_postfix_str(f'Test  Loss: {avg_test_loss:.5f}')
+
+            test_loss_hist.append(avg_test_loss)
+            test_metrics = [metric.compute() for metric in metrics_lst]
+            test_metrics_hist.append(test_metrics)
+            _ = [metric.reset() for metric in metrics_lst]
+
+            met_test = test_metrics[save_on]
+            met_test_best = met_test
+
+        xstrres = 'Saved Model:'
+        for name, value in zip(metric_names, test_metrics):
+            xstrres = f'{xstrres} Test {name} {value:.5f}'
+        print(xstrres)
+
     for epoch in range(N_EPOCHS):
         train_loss = 0
         steps_train = 0
 
         train_target_hist = list([])
+
 
         # --Start Model Training--
         model.train()
@@ -150,7 +223,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                     xdata, xtarget = xdata.to(device), xtarget.to(device)
 
                     optimizer.zero_grad()
-                    output.model(xdata)
+                    output = model(xdata)
                     loss = criterion(output, xtarget)
 
                     steps_test += 1
@@ -168,13 +241,13 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                     # pred_label = torch.round(pred_logit)
                     pred_label = torch.where(pred_logit > 0.5, 1, 0)
 
-                    test_pred_labels = np.vstack(test_pred_labels, pred_label.numpy())
+                    test_pred_labels = np.vstack([test_pred_labels, pred_label.numpy()])
 
                     metrics_ = [metric(pred_label, xtarget.cpu()) for metric in metrics_lst]
 
                     pbar.update(1)
                     avg_test_loss = test_loss / steps_test
-                    pbar.set_postfix_str(f'Test  Loss: {avg_train_loss:.5f}')
+                    pbar.set_postfix_str(f'Test  Loss: {avg_test_loss:.5f}')
 
             test_loss_hist.append(avg_test_loss)
             test_metrics = [metric.compute() for metric in metrics_lst]
@@ -198,9 +271,9 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
             torch.save(model.state_dict(), f'model_{MODEL_NAME}.pt')
 
             xdf_dset_results = xdf_dset_test.copy()  # global var
-            xdf_dset_results['results'] = test_pred_labels
+            xdf_dset_results['results'] = test_pred_labels[1:]
 
-            xdf_dset_results.to_excel(f'results_{MODEL_NAME}', index=False)
+            xdf_dset_results.to_excel(f'results_{MODEL_NAME}.xlsx', index=False)
             print('Model Saved !!')
             met_test_best = met_test
             model_save_epoch.append(epoch)
