@@ -6,7 +6,7 @@ from PIL import Image
 def resize_and_copy_image(image_path, destination_folder, target_size=(256, 256)):
     try:
         # Open the image using PIL
-        with Image.open(image_path) as img:
+        with Image.open(image_path).convert('RGB') as img:
             # Resize the image
             resized_img = img.resize(target_size)
             # Save the resized image to the destination folder
@@ -66,7 +66,7 @@ def move_train_test_dev(excel_path = 'equal_distribution.xlsx'):
 
     final_data.to_excel(output_excel, index=False)
     print(f"Generated {output_excel} file.")
-#move_train_test_dev()
+move_train_test_dev()
 
 def process_target():
     output_excel = 'fully_processed.xlsx'

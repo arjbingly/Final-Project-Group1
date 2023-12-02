@@ -48,15 +48,15 @@ class CustomDataset(data.Dataset):
 
         #get labels
         if self.type_data == 'train':
-            y = xdf_dset.target.get(ID)
+            y = [xdf_dset.target.get(ID)]
             file = xdf_dset.destination_path.get(ID)
         elif self.type_data == 'test':
-            y = self.xdf_dset_test.target.get(ID)
+            y = [xdf_dset_test.target.get(ID)]
             file = xdf_dset_test.destination_path.get(ID)
         elif self.type_data == 'dev':
-            y = self.xdf_dset_dev.target.get(ID)
+            y = [xdf_dset_dev.target.get(ID)]
             file = xdf_dset_dev.destination_path.get(ID)
-
+        y= torch.FloatTensor(y)
         img = cv2.imread(file)
         #img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
         X = torch.FloatTensor(img)

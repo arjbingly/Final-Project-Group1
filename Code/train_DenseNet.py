@@ -7,7 +7,7 @@ from torch.utils import data
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchmetrics
-import tqdm
+from tqdm import tqdm
 from load_data import CustomDataset, CustomDataLoader
 #%%
 is_cuda = torch.cuda.is_available()
@@ -61,6 +61,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
     save_on = metric_names.index(save_on)
 
     model, optimizer, criterion, scheduler = model_definition()
+    sig = nn.Sigmoid()
 
     train_loss_item = list([])
     test_loss_item = list([])
@@ -100,7 +101,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                 train_loss += loss.item()
                 train_loss_item.append([epoch, loss.item()])
 
-                output_arr = output.detach().cpu().numpy()
+                output_arr = nn.functional.sigmoid(output.detach().cpu()).numpy()
 
                 if len(output_arr_hist) == 0:
                     output_arr_hist = output_arr
@@ -137,6 +138,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
         test_pred_labels = np.zeros(1)
 
         model.eval()
+
 
         with tqdm(total=len(test_gen), desc=f'Epoch {epoch}') as pbar:
             with torch.no_grad():
@@ -211,7 +213,8 @@ if __name__ == '__main__':
     xdf_dset_test = xdf_data[xdf_data["split"] == 'test'].copy()
     xdf_dset_dev = xdf_data[xdf_data["split"] == 'dev'].copy()
 
-    train_gen, test_gen, dev_gen = CustomDataLoader.read_data()
+    data_loader = CustomDataLoader()
+    train_gen, test_gen, dev_gen = data_loader.read_data()
 
     metric_lst = [torchmetrics.Accuracy(task='binary'),
                    torchmetrics.Precision(task='binary'),
