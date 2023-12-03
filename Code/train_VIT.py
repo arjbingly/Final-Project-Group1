@@ -34,10 +34,10 @@ BATCH_SIZE = 128 # --
 MODEL_NAME = args.name
 # SAVE_MODEL = True # --
 SAVE_MODEL = args.dry
-N_EPOCHS = 10 # --
+N_EPOCHS = 20 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
-ES_PATIENCE = 5 # --
+ES_PATIENCE = 8 # --
 LR_PATIENCE = 1 # --
 SAVE_ON = 'AUROC' #--
 
@@ -164,7 +164,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
     model_save_epoch = []
 
     if CONTINUE_TRAINING:
-        model.load_state_dict(torch.load(f'model_{MODEL_NAME}', map_location=device))
+        model.load_state_dict(torch.load(f'model_{MODEL_NAME}.pt', map_location=device))
         model = model.to(device)
         print(f'Continuing Training - {MODEL_NAME}')
         model_save_epoch.append(0)
@@ -182,7 +182,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                     xdata, xtarget = xdata.to(device), xtarget.to(device)
 
                     optimizer.zero_grad()
-                    output = model(xdata)
+                    output = model(xdata).logits
                     loss = criterion(output, xtarget)
 
                     steps_test += 1

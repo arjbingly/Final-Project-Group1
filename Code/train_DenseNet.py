@@ -99,7 +99,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
     model_save_epoch = []
 
     if CONTINUE_TRAINING:
-        model.load_state_dict(torch.load(f'model_{MODEL_NAME}', map_location=device))
+        model.load_state_dict(torch.load(f'model_{MODEL_NAME}.pt', map_location=device))
         model = model.to(device)
         print(f'Continuing Training - {MODEL_NAME}')
         model_save_epoch.append(0)
