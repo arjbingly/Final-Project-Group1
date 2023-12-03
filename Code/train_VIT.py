@@ -3,18 +3,20 @@ import numpy as np
 import pandas as pd
 import torch
 import os
-from torchvision.models import DenseNet
 from torch.utils import data
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchmetrics
 from tqdm import tqdm
-from load_data import CustomDataset, CustomDataLoader
+from transformers import AutoImageProcessor, AutoModelForImageClassification
+from PIL import Image
+
+
 # %%
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', action='store_true')
 parser.add_argument('-e', '--excel', default='fully_processed.xlsx', type=str)
-parser.add_argument('-n', '--name', default='DenseNet',type=str)
+parser.add_argument('-n', '--name', default='vit',type=str)
 parser.add_argument('--dry', action='store_false')
 args = parser.parse_args()
 
@@ -35,7 +37,7 @@ SAVE_MODEL = args.dry
 N_EPOCHS = 20 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
-ES_PATIENCE = 5 # --
+ES_PATIENCE = 8 # --
 LR_PATIENCE = 1 # --
 SAVE_ON = 'AUROC' #--
 
@@ -54,15 +56,79 @@ sep = os.path.sep
 os.chdir('..')
 DATA_DIR = os.getcwd() + sep + 'Data' + sep
 os.chdir(OR_PATH)
+#%%
+xdf_data = pd.read_excel(EXCEL_FILE)
+xdf_dset = xdf_data[xdf_data["split"] == 'train'].copy()
+xdf_dset_test = xdf_data[xdf_data["split"] == 'test'].copy()
+xdf_dset_dev = xdf_data[xdf_data["split"] == 'dev'].copy()
+#%%
+
+class CustomDataset(data.Dataset):
+    '''
+    From : https://stanford.edu/~shervine/blog/pytorch-how-to-generate-data-parallel
+    '''
+    def __init__(self, list_IDs, type_data):
+        self.type_data = type_data
+        self.list_IDs = list_IDs
+        self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+
+    def __len__(self):
+        return len(self.list_IDs)
+
+
+    def __getitem__(self, index):
+        ID = self.list_IDs[index]
+
+        #get labels
+        if self.type_data == 'train':
+            y = [xdf_dset.target.get(ID)]
+            file = xdf_dset.destination_path.get(ID)
+        elif self.type_data == 'test':
+            y = [xdf_dset_test.target.get(ID)]
+            file = xdf_dset_test.destination_path.get(ID)
+        elif self.type_data == 'dev':
+            y = [xdf_dset_dev.target.get(ID)]
+            file = xdf_dset_dev.destination_path.get(ID)
+        y= torch.FloatTensor(y)
+        img = Image.open(file)
+        X = self.processor(images=img, return_tensors='pt')['pixel_values'].squeeze()
+        return X, y
+class CustomDataLoader:
+    def __init__(self):
+        pass
+
+    def read_data(self):
+        list_of_ids = list(xdf_dset.index)
+        list_of_ids_test = list(xdf_dset_test.index)
+        list_of_ids_dev = list(xdf_dset_dev.index)
+
+        partition = {
+            'train': list_of_ids,
+            'test': list_of_ids_test,
+            'dev' : list_of_ids_dev
+        }
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': True}
+
+        training_set = CustomDataset(partition['train'], 'train')
+        training_generator = data.DataLoader(training_set, **params)
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': False}
+        test_set = CustomDataset(partition['test'], 'test')
+        test_generator = data.DataLoader(test_set, **params)
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': False}
+        dev_set = CustomDataset(partition['dev'], 'dev')
+        dev_generator = data.DataLoader(dev_set, **params)
+
+        return training_generator, test_generator, dev_generator
 
 
 # %%
 def model_definition():
-    model = DenseNet(num_classes=1,
-                     growth_rate=48,
-                     num_init_features=64,
-                     block_config=(6, 12, 24, 16)
-                     )
+    model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224",
+                                                            num_labels=1,
+                                                            ignore_mismatched_sizes=True)
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
@@ -81,7 +147,6 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
     save_on = metric_names.index(save_on)
 
     model, optimizer, criterion, scheduler = model_definition()
-    sig = nn.Sigmoid()
 
     train_loss_item = list([])
     test_loss_item = list([])
@@ -117,7 +182,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                     xdata, xtarget = xdata.to(device), xtarget.to(device)
 
                     optimizer.zero_grad()
-                    output = model(xdata)
+                    output = model(xdata).logits
                     loss = criterion(output, xtarget)
 
                     steps_test += 1
@@ -170,7 +235,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                 xdata, xtarget = xdata.to(device), xtarget.to(device)
 
                 optimizer.zero_grad()
-                output = model(xdata)
+                output = model(xdata).logits
                 loss = criterion(output, xtarget)
                 loss.backward()
                 optimizer.step()
@@ -223,7 +288,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                     xdata, xtarget = xdata.to(device), xtarget.to(device)
 
                     optimizer.zero_grad()
-                    output = model(xdata)
+                    output = model(xdata).logits
                     loss = criterion(output, xtarget)
 
                     steps_test += 1
