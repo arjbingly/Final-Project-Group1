@@ -6,21 +6,28 @@ import os
 from torchvision.models import DenseNet
 from torch.utils import data
 from torch import nn
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchmetrics
 from tqdm import tqdm
-from load_data import CustomDataset, CustomDataLoader
+from PIL import Image
+from torchvision.transforms import v2
 # %%
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--excel', default='fully_processed.xlsx', type=str)
 parser.add_argument('-n', '--name', default='DenseNet',type=str)
 parser.add_argument('-s', '--split', choices=['train', 'test', 'dev'], default='test')
-
 args = parser.parse_args()
 
+# %%
+OR_PATH = os.getcwd()
+sep = os.path.sep
+os.chdir('..')
+DATA_DIR = os.getcwd() + sep + 'Data' + sep
+EXCEL_DIR = os.getcwd() + sep + 'Excel' + sep
+os.chdir(OR_PATH)
 #%%
-# EXCEL_FILE = 'fully_processed.xlsx' # --
-EXCEL_FILE = args.excel
+EXCEL_FILE = EXCEL_DIR + args.excel
+# CONTINUE_TRAINING = False
+CONTINUE_TRAINING = args.c
 # %%
 IMAGE_SIZE = 256
 CHANNEL = 3
@@ -37,15 +44,77 @@ if is_cuda:
 else:
     device = torch.device("cpu")
     print("GPU not available, CPU used")
+#%%
+#%%
+# Load Data
+xdf_data = pd.read_excel(EXCEL_FILE)
+xdf_dset = xdf_data[xdf_data["split"] == 'train'].copy()
+xdf_dset_test = xdf_data[xdf_data["split"] == 'test'].copy()
+xdf_dset_dev = xdf_data[xdf_data["split"] == 'dev'].copy()
+class CustomDataset(data.Dataset):
+    '''
+    From : https://stanford.edu/~shervine/blog/pytorch-how-to-generate-data-parallel
+    '''
+    def __init__(self, list_IDs, type_data):
+        self.type_data = type_data
+        self.list_IDs = list_IDs
 
-# %%
-OR_PATH = os.getcwd()
-sep = os.path.sep
-os.chdir('..')
-DATA_DIR = os.getcwd() + sep + 'Data' + sep
-os.chdir(OR_PATH)
+    def __len__(self):
+        return len(self.list_IDs)
 
+    def __getitem__(self, index):
+        ID = self.list_IDs[index]
 
+        #get labels
+        if self.type_data == 'train':
+            y = [xdf_dset.target.get(ID)]
+            file = xdf_dset.destination_path.get(ID)
+        elif self.type_data == 'test':
+            y = [xdf_dset_test.target.get(ID)]
+            file = xdf_dset_test.destination_path.get(ID)
+        elif self.type_data == 'dev':
+            y = [xdf_dset_dev.target.get(ID)]
+            file = xdf_dset_dev.destination_path.get(ID)
+        y= torch.FloatTensor(y)
+        img = Image.open(file).convert('RGB')
+        preprocess = v2.Compose([
+            v2.Resize(IMAGE_SIZE),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        X = preprocess(img)
+        X = torch.reshape(X, (CHANNEL, IMAGE_SIZE, IMAGE_SIZE))
+        return X, y
+class CustomDataLoader:
+    def __init__(self):
+        pass
+
+    def read_data(self):
+        list_of_ids = list(xdf_dset.index)
+        list_of_ids_test = list(xdf_dset_test.index)
+        list_of_ids_dev = list(xdf_dset_dev.index)
+
+        partition = {
+            'train': list_of_ids,
+            'test': list_of_ids_test,
+            'dev' : list_of_ids_dev
+        }
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': True}
+
+        training_set = CustomDataset(partition['train'], 'train')
+        training_generator = data.DataLoader(training_set, **params)
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': False}
+        test_set = CustomDataset(partition['test'], 'test')
+        test_generator = data.DataLoader(test_set, **params)
+
+        params = {'batch_size': BATCH_SIZE, 'shuffle': False}
+        dev_set = CustomDataset(partition['dev'], 'dev')
+        dev_generator = data.DataLoader(dev_set, **params)
+
+        return training_generator, test_generator, dev_generator
 # %%
 def model_definition():
     model = DenseNet(num_classes=1,
