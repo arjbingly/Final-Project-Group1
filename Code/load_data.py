@@ -1,9 +1,10 @@
 import numpy as np
 import torch
-import cv2
+from PIL import Image
 from torch.utils import data
 import pandas as pd
 import os
+from torchvision.transforms import v2
 '''
 to run this file :
  
@@ -31,7 +32,7 @@ xdf_dset_test = xdf_data[xdf_data["split"] == 'test'].copy()
 xdf_dset_dev = xdf_data[xdf_data["split"] == 'dev'].copy()
 IMAGE_SIZE = 256
 CHANNEL = 3
-BATCH_SIZE = 32
+BATCH_SIZE = 80
 class CustomDataset(data.Dataset):
     '''
     From : https://stanford.edu/~shervine/blog/pytorch-how-to-generate-data-parallel
@@ -57,9 +58,16 @@ class CustomDataset(data.Dataset):
             y = [xdf_dset_dev.target.get(ID)]
             file = xdf_dset_dev.destination_path.get(ID)
         y= torch.FloatTensor(y)
-        img = cv2.imread(file)
+        img = Image.open(file).convert('RGB')
         #img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-        X = torch.FloatTensor(img)
+        # X = torch.FloatTensor(img)
+        preprocess = v2.Compose([
+            v2.Resize(IMAGE_SIZE),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        X = preprocess(img)
         X = torch.reshape(X, (CHANNEL, IMAGE_SIZE, IMAGE_SIZE))
         return X, y
 class CustomDataLoader:
