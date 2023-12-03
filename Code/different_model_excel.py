@@ -2,9 +2,12 @@ import pandas as pd
 import random
 import numpy as np
 from sklearn.model_selection import train_test_split
+import os
+np.random.seed(42)
+excel_folder_name = 'Excel'
 
 data = pd.read_excel('image_data.xlsx',index_col=0)
-np.random.seed(42)
+
 fake_images = pd.DataFrame(columns=data.columns)
 dict_total = {'inpainting': 20000, 'insight': 20000, 'text2img': 20000,'1m_faces_00': 10000,'iFakeFaceDB': 60000,'celebahq256_imgs': 30000, 'wiki': 30000}
 diffusion_folders = ['inpainting', 'text2img', 'insight']
@@ -50,14 +53,6 @@ small_real_df.reset_index(drop=True, inplace=True)
 df_total_1m_faces_00 = pd.concat([small_real_df, df_1m_faces_00])
 
 
-# #shuffle the data
-# final_df_diffusion = df_total_diffusion.sample(frac=1, random_state=42)
-# final_df_diffusion.reset_index(drop=True, inplace=True)
-# final_df_iFakeFaceDB = df_total_iFakeFaceDB.sample(frac=1, random_state=42)
-# final_df_iFakeFaceDB.reset_index(drop=True, inplace=True)
-# final_df_1m_faces_00 = df_total_1m_faces_00.sample(frac=1, random_state=42)
-# final_df_1m_faces_00.reset_index(drop=True, inplace=True)
-
 def create_train_test_split(model_df,model_name = 'model_name'):
     shuffled_df = model_df.sample(frac=1, random_state=42)
     train_data, test_data = train_test_split(shuffled_df, test_size=0.3, random_state=42)
@@ -65,7 +60,14 @@ def create_train_test_split(model_df,model_name = 'model_name'):
     test_data['split'] = 'test'
     combined_data = pd.concat([train_data, test_data], ignore_index=True)
     combined_data['target'] = combined_data['target_class'].apply(lambda x: 1 if x == 'real' else 0)
-    combined_data.to_excel(f'{model_name}.xlsx', index=False)
+    combined_data['destination_path'] = combined_data['image path']
+    combined_data = combined_data.rename(columns = {"image path": "image_path"})
+
+    if not os.path.exists(excel_folder_name):
+        os.makedirs(excel_folder_name)
+    file_name = f'{model_name}.xlsx'
+    file_path = os.path.join(excel_folder_name, file_name)
+    combined_data.to_excel(file_path, index=False)
     return combined_data
 
 data_diffusion =create_train_test_split(df_total_diffusion,'diffusion')
