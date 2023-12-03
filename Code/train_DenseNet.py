@@ -26,13 +26,13 @@ CONTINUE_TRAINING = args.c
 # %%
 IMAGE_SIZE = 256
 CHANNEL = 3
-BATCH_SIZE = 64 # --
+BATCH_SIZE = 128 # --
 # %%
 # MODEL_NAME = 'DenseNet' # --
 MODEL_NAME = args.name
 # SAVE_MODEL = True # --
 SAVE_MODEL = args.dry
-N_EPOCHS = 10 # --
+N_EPOCHS = 20 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
 ES_PATIENCE = 5 # --
