@@ -16,7 +16,7 @@ from PIL import Image
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', action='store_true')
 parser.add_argument('-e', '--excel', default='fully_processed.xlsx', type=str)
-parser.add_argument('-n', '--name', default='vit',type=str)
+parser.add_argument('-n', '--name', default='deit',type=str)
 parser.add_argument('--dry', action='store_false')
 args = parser.parse_args()
 
@@ -28,7 +28,7 @@ CONTINUE_TRAINING = args.c
 # %%
 IMAGE_SIZE = 256
 CHANNEL = 3
-BATCH_SIZE = 128 # --
+BATCH_SIZE = 32 # --
 # %%
 # MODEL_NAME = 'DenseNet' # --
 MODEL_NAME = args.name
@@ -40,7 +40,7 @@ MOMENTUM = 0.9 # --
 ES_PATIENCE = 5 # --
 LR_PATIENCE = 1 # --
 SAVE_ON = 'AUROC' #--
-
+PRETRAINED_MODEL ="facebook/deit-base-distilled-patch16-384"
 # %%
 is_cuda = torch.cuda.is_available()
 if is_cuda:
@@ -70,7 +70,7 @@ class CustomDataset(data.Dataset):
     def __init__(self, list_IDs, type_data):
         self.type_data = type_data
         self.list_IDs = list_IDs
-        self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        self.processor = AutoImageProcessor.from_pretrained(PRETRAINED_MODEL)
 
     def __len__(self):
         return len(self.list_IDs)
@@ -126,7 +126,7 @@ class CustomDataLoader:
 
 # %%
 def model_definition():
-    model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224",
+    model = AutoModelForImageClassification.from_pretrained(PRETRAINED_MODEL,
                                                             num_labels=1,
                                                             ignore_mismatched_sizes=True)
     model = model.to(device)
