@@ -20,9 +20,15 @@ parser.add_argument('-n', '--name', default='deit',type=str)
 parser.add_argument('--dry', action='store_false')
 args = parser.parse_args()
 
+# %%
+OR_PATH = os.getcwd()
+sep = os.path.sep
+os.chdir('..')
+DATA_DIR = os.getcwd() + sep + 'Data' + sep
+EXCEL_DIR = os.getcwd() + sep + 'Excel' + sep
+os.chdir(OR_PATH)
 #%%
-# EXCEL_FILE = 'fully_processed.xlsx' # --
-EXCEL_FILE = args.excel
+EXCEL_FILE = EXCEL_DIR + args.excel
 # CONTINUE_TRAINING = False
 CONTINUE_TRAINING = args.c
 # %%
@@ -50,12 +56,6 @@ else:
     device = torch.device("cpu")
     print("GPU not available, CPU used")
 
-# %%
-OR_PATH = os.getcwd()
-sep = os.path.sep
-os.chdir('..')
-DATA_DIR = os.getcwd() + sep + 'Data' + sep
-os.chdir(OR_PATH)
 #%%
 xdf_data = pd.read_excel(EXCEL_FILE)
 xdf_dset = xdf_data[xdf_data["split"] == 'train'].copy()
