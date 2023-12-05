@@ -38,7 +38,7 @@ BATCH_SIZE = 128 # --
 MODEL_NAME = args.name
 # SAVE_MODEL = True # --
 SAVE_MODEL = args.dry
-N_EPOCHS = 20 # --
+N_EPOCHS = 10 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
 ES_PATIENCE = 8 # --
@@ -302,6 +302,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
 
                     pred_logit = output.detach().cpu()
                     # pred_label = torch.round(pred_logit)
+                    pred_logit = nn.functional.sigmoid(pred_logit)
                     pred_label = torch.where(pred_logit > 0.5, 1, 0)
 
                     test_pred_labels = np.vstack([test_pred_labels, pred_label.numpy()])

@@ -1,0 +1,46 @@
+NewDiscriminator(
+  (b256): DiscriminatorBlock(
+    resolution=256, architecture=resnet
+    (fromrgb): Conv2dLayer(in_channels=3, out_channels=64, activation=lrelu, up=1, down=1)
+    (conv0): Conv2dLayer(in_channels=64, out_channels=64, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=64, out_channels=128, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=64, out_channels=128, activation=linear, up=1, down=2)
+  )
+  (b128): DiscriminatorBlock(
+    resolution=128, architecture=resnet
+    (conv0): Conv2dLayer(in_channels=128, out_channels=128, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=128, out_channels=256, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=128, out_channels=256, activation=linear, up=1, down=2)
+  )
+  (b64): DiscriminatorBlock(
+    resolution=64, architecture=resnet
+    (conv0): Conv2dLayer(in_channels=256, out_channels=256, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=256, out_channels=512, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=256, out_channels=512, activation=linear, up=1, down=2)
+  )
+  (b32): DiscriminatorBlock(
+    resolution=32, architecture=resnet
+    (conv0): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=512, out_channels=512, activation=linear, up=1, down=2)
+  )
+  (b16): DiscriminatorBlock(
+    resolution=16, architecture=resnet
+    (conv0): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=512, out_channels=512, activation=linear, up=1, down=2)
+  )
+  (b8): DiscriminatorBlock(
+    resolution=8, architecture=resnet
+    (conv0): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=1)
+    (conv1): Conv2dLayer(in_channels=512, out_channels=512, activation=lrelu, up=1, down=2)
+    (skip): Conv2dLayer(in_channels=512, out_channels=512, activation=linear, up=1, down=2)
+  )
+  (b4): DiscriminatorEpilogue(
+    resolution=4, architecture=resnet
+    (mbstd): MinibatchStdLayer(group_size=8, num_channels=1)
+    (conv): Conv2dLayer(in_channels=513, out_channels=512, activation=lrelu, up=1, down=1)
+    (fc): FullyConnectedLayer(in_features=8192, out_features=512, activation=lrelu)
+    (out): FullyConnectedLayer(in_features=512, out_features=1, activation=linear)
+  )
+)
