@@ -40,7 +40,7 @@ BATCH_SIZE = 32 # --
 MODEL_NAME = args.name
 # SAVE_MODEL = True # --
 SAVE_MODEL = args.dry
-N_EPOCHS = 20 # --
+N_EPOCHS = 10 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
 ES_PATIENCE = 8 # --
@@ -75,7 +75,6 @@ class CustomDataset(data.Dataset):
     def __len__(self):
         return len(self.list_IDs)
 
-
     def __getitem__(self, index):
         ID = self.list_IDs[index]
 
@@ -90,7 +89,7 @@ class CustomDataset(data.Dataset):
             y = [xdf_dset_dev.target.get(ID)]
             file = xdf_dset_dev.destination_path.get(ID)
         y= torch.FloatTensor(y)
-        img = Image.open(file)
+        img = Image.open(file).convert('RGB')
         X = self.processor(images=img, return_tensors='pt')['pixel_values'].squeeze()
         return X, y
 class CustomDataLoader:

@@ -88,7 +88,7 @@ class CustomDataset(data.Dataset):
             y = [xdf_dset_dev.target.get(ID)]
             file = xdf_dset_dev.destination_path.get(ID)
         y= torch.FloatTensor(y)
-        img = Image.open(file)
+        img = Image.open(file).convert('RGB')
         X = self.processor(images=img, return_tensors='pt')['pixel_values'].squeeze()
         return X, y
 class CustomDataLoader:
