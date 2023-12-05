@@ -120,7 +120,11 @@ def model_definition():
                      num_init_features=64,
                      block_config=(6, 12, 24, 16)
                      )
-    model.load_state_dict(torch.load(f'model_{MODEL_NAME}.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_{MODEL_NAME}.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_DenseNet.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_DenseNet_diffusion.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_DenseNet_GAN.pt', map_location=device))
+    model.load_state_dict(torch.load(f'model_DenseNet_GANprintR.pt', map_location=device))
     model = model.to(device)
     # optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
@@ -187,6 +191,7 @@ def eval_model(test_gen, metrics_lst, metric_names):
     xstrres = ''
     for name, value in zip(metric_names, test_metrics):
         xstrres = f'{xstrres} {name} {value:.5f}'
+    print(xstrres)
 
     return test_pred_labels[1:], test_metrics
 # %%

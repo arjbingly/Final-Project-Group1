@@ -1,0 +1,5 @@
+*** Evaluation Results *** 
+Model Name : dev_densenet_diffusion 
+Excel File : /home/ubuntu/Project/Excel/fully_processed.xlsx 
+Split : dev 
+ Accuracy 0.59407 Precision 0.57277 Recall 0.97970 AUROC 0.56010 F1Score 0.72291 

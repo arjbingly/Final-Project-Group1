@@ -1,0 +1,5 @@
+*** Evaluation Results *** 
+Model Name : dev_VIT_GANPrintR 
+Excel File : /home/ubuntu/Project/Excel/fully_processed.xlsx 
+Split : dev 
+ Accuracy 0.66407 Precision 0.61670 Recall 1.00000 AUROC 0.63447 F1Score 0.76291 
