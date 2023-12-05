@@ -74,7 +74,7 @@ class VIT_pipeline():
         self.model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224",
                                                                 num_labels=1,
                                                                 ignore_mismatched_sizes=True)
-        self.model.load_state_dict(torch.load(f'{MODEL_DIR}model_VIT.pt', map_location=device))
+        self.model.load_state_dict(torch.load(f'{MODEL_DIR}model_{self.model_name}.pt', map_location=device))
         self.model = self.model.to(device)
 
     def inference(self,my_upload):
@@ -89,11 +89,8 @@ class VIT_pipeline():
 # # TEST CASE
 # test_image = 'test_img_01.png'
 #
-# model_name = "DenseNet"
+# model_name = "VIT_diffusion"
 #
-# if model_name == 'VIT':
-#     model_pipe = VIT_pipeline(model_name)
-# elif model_name == 'DenseNet':
-#     model_pip = DenseNet_pipeline(model_name)
+# model_pipe = VIT_pipeline(model_name)
 # probability= model_pipe.inference(test_image)
 # print(probability)
