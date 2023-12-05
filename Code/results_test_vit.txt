@@ -1,0 +1,5 @@
+*** Evaluation Results *** 
+Model Name : test_vit 
+Excel File : /home/ubuntu/Project/Excel/fully_processed.xlsx 
+Split : test 
+ Accuracy 0.45067 Precision 0.49929 Recall 0.46356 AUROC 0.44928 F1Score 0.48076 

@@ -197,6 +197,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
 
                     pred_logit = output.detach().cpu()
                     # pred_label = torch.round(pred_logit)
+                    pred_logit = nn.functional.sigmoid(pred_logit)
                     pred_label = torch.where(pred_logit > 0.5, 1, 0)
 
                     test_pred_labels = np.vstack([test_pred_labels, pred_label.numpy()])
@@ -303,6 +304,7 @@ def train_test(train_gen, test_gen, metrics_lst, metric_names, save_on, early_st
                         test_target_hist = np.vstack([test_target_hist, xtarget.cpu().numpy()])
 
                     pred_logit = output.detach().cpu()
+                    pred_logit = nn.functional.sigmoid(pred_logit)
                     # pred_label = torch.round(pred_logit)
                     pred_label = torch.where(pred_logit > 0.5, 1, 0)
 
