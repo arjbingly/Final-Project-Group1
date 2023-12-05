@@ -2,7 +2,7 @@ import os
 import torch
 from PIL import Image
 from torchvision.transforms import v2
-from transformers import AutoImageProcessor
+from transformers import AutoImageProcessor, AutoModelForImageClassification
 from torchvision.models import DenseNet
 from torch import nn
 import streamlit as st
@@ -27,14 +27,13 @@ torch.set_grad_enabled(False)
 IMAGE_SIZE = 256
 CHANNEL = 3
 #%%
+class DenseNet_pipeline():
+    def __init__(self, model_name):
+        self.model_name = model_name
+        self.load_model()
 
-
-#%%
-@st.cache_data
-def preprocess_image(my_upload, model_type):
-    image = Image.open(my_upload).convert('RGB')
-
-    if model_type == 'CNN':
+    def preprocess_image(self, my_upload):
+        image = Image.open(my_upload).convert('RGB')
         processor = v2.Compose([
             v2.Resize((IMAGE_SIZE, IMAGE_SIZE)),
             v2.ToImage(),
@@ -43,39 +42,58 @@ def preprocess_image(my_upload, model_type):
         ])
         X = processor(image)
         X = torch.reshape(X, (CHANNEL, IMAGE_SIZE, IMAGE_SIZE))
-    if model_type == 'Transformer':
-        processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
-        X = processor(images=image, return_tensors='pt')['pixel_values'].squeeze()
-
-    return X
-
-@st.cache_resource
-def load_model(model_name):
-    if model_name == "DenseNet":
-        model = DenseNet(num_classes=1,
+        return X
+    def load_model(self):
+        self.model = DenseNet(num_classes=1,
                          growth_rate=48,
                          num_init_features=64,
                          block_config=(6, 12, 24, 16)
                          )
-        model.load_state_dict(torch.load(f'{MODEL_DIR}model_{model_name}.pt', map_location=device))
-        model = model.to(device)
-    return model
+        self.model.load_state_dict(torch.load(f'{MODEL_DIR}model_{self.model_name}.pt', map_location=device))
+        self.model = self.model.to(device)
 
-@st.cache_data
-def model_inference(_X, _model):
-    X = _X.unsqueeze(0).to(device)
-    logits = _model(X)
-    probability = nn.functional.sigmoid(logits).cpu().numpy()
-    return probability
+    def inference(self,my_upload):
+        X = self.preprocess_image(my_upload)
+        X = X.unsqueeze(0).to(device)
+        logits = self.model(X)
+        probability = nn.functional.sigmoid(logits).cpu().numpy()
+        return probability[0,0]
 
 #%%
-# TEST CASE
+class VIT_pipeline():
+    def __init__(self, model_name):
+        self.model_name = model_name
+        self.load_model()
+
+    def preprocess_image(self, my_upload):
+        image = Image.open(my_upload).convert('RGB')
+        processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        X = processor(images=image, return_tensors='pt')['pixel_values'].squeeze()
+        return X
+    def load_model(self):
+        self.model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224",
+                                                                num_labels=1,
+                                                                ignore_mismatched_sizes=True)
+        self.model.load_state_dict(torch.load(f'{MODEL_DIR}model_VIT.pt', map_location=device))
+        self.model = self.model.to(device)
+
+    def inference(self,my_upload):
+            X = self.preprocess_image(my_upload)
+            X = X.unsqueeze(0).to(device)
+            logits = self.model(X).logits
+            probability = nn.functional.sigmoid(logits).cpu().numpy()
+            return probability[0,0]
+#%%
+
+#%%
+# # TEST CASE
 # test_image = 'test_img_01.png'
-# image = Image.open(test_image)
 #
-# model_type = "CNN"
 # model_name = "DenseNet"
 #
-# model = load_model(model_name)
-# X = preprocess_image(image, model_type).to(device)
-# probability = model_inference(X, model)
+# if model_name == 'VIT':
+#     model_pipe = VIT_pipeline(model_name)
+# elif model_name == 'DenseNet':
+#     model_pip = DenseNet_pipeline(model_name)
+# probability= model_pipe.inference(test_image)
+# print(probability)
