@@ -39,7 +39,7 @@ BATCH_SIZE = 80 # --
 MODEL_NAME = args.name
 # SAVE_MODEL = True # --
 SAVE_MODEL = args.dry
-N_EPOCHS = 20 # --
+N_EPOCHS = 25 # --
 LR = 0.01 # --
 MOMENTUM = 0.9 # --
 ES_PATIENCE = 5 # --
@@ -87,7 +87,7 @@ class CustomDataset(data.Dataset):
         y= torch.FloatTensor(y)
         img = Image.open(file).convert('RGB')
         preprocess = v2.Compose([
-            v2.Resize(IMAGE_SIZE),
+            v2.Resize((IMAGE_SIZE, IMAGE_SIZE)),
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
