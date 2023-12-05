@@ -1,0 +1,5 @@
+*** Evaluation Results *** 
+Model Name : dev_deit 
+Excel File : /home/ubuntu/Project/Excel/fully_processed.xlsx 
+Split : dev 
+ Accuracy 0.83607 Precision 0.82924 Recall 0.87737 AUROC 0.83243 F1Score 0.85262 

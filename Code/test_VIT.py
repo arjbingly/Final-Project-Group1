@@ -119,7 +119,11 @@ def model_definition():
     model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224",
                                                             num_labels=1,
                                                             ignore_mismatched_sizes=True)
-    model.load_state_dict(torch.load(f'model_vit.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_VIT.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_VIT_diffusion.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_VIT_GAN.pt', map_location=device))
+    model.load_state_dict(torch.load(f'model_VIT_GANprintR.pt', map_location=device))
+
     model = model.to(device)
     # optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()

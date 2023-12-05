@@ -1,0 +1,5 @@
+*** Evaluation Results *** 
+Model Name : test_VIT_GAN_PrintR_Results 
+Excel File : /home/ubuntu/Project/Excel/iFakeFaceDB.xlsx 
+Split : test 
+ Accuracy 0.99997 Precision 1.00000 Recall 0.99994 AUROC 0.99997 F1Score 0.99997 

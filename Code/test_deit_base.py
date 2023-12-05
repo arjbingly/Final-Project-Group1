@@ -120,7 +120,8 @@ def model_definition():
     model = AutoModelForImageClassification.from_pretrained(PRETRAINED_MODEL,
                                                             num_labels=1,
                                                             ignore_mismatched_sizes=True)
-    model.load_state_dict(torch.load(f'model_deit.pt', map_location=device))
+    # model.load_state_dict(torch.load(f'model_deit.pt', map_location=device))
+    model.load_state_dict(torch.load(f'model_deit_iFakeFaceDB.pt', map_location=device))
     model = model.to(device)
     # optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     criterion = nn.BCEWithLogitsLoss()
