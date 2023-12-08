@@ -38,3 +38,5 @@ train set is used to train and test set set is used the check the performance of
 dev set is just used once to get the final results of the model.
 
 Every model has a test\_{model_name}.py file. To test the model on the dev set can be done using python3 test_densenet.py --split dev
+
+Final-Group-Presentation folder contains the streamlit app of the FaceAuth application and the other streamlit application for the presentation.
