@@ -25,6 +25,12 @@ in fully_processed.xlsx we have the split of the final files and also the output
 
 fully_processed.xlsx is generally used to train our models on the whole dataset.
 
+To download the models, we just need to run the shell script called download_models.sh using ./download_models.sh command on linux terminal.
+
+To download the dataset, we need to run the shell script called 1mFakeFaces_Download.sh using ./1mFakeFaces_Download.sh on linux terminal.
+
+Instructions to download all the other datasets are mentioned in the files namely, CelebA-HQ-256_Download.txt, DeepFakeFace_Download.txt, and iFakeFaceDB_Download.txt.
+
 The dataset is divided into train, test, and dev.
 
 train set is used to train and test set set is used the check the performance of the model and then cherry pick to improve the performance of the model.
