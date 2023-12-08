@@ -1,4 +1,0 @@
-CelebA-HQ-256 Kaggle Dataset
-https://www.kaggle.com/datasets/denislukovnikov/celebahq256-images-only/
-
-
