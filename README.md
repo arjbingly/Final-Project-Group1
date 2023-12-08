@@ -1,4 +1,4 @@
-# Final-Project-Group1
+# Fake Face Detection: FaceAuth
 
 DeepLearning Final Project
 
